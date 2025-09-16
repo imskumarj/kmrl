@@ -21,16 +21,45 @@ export const signup: RequestHandler = async (req, res) => {
 
 export const login: RequestHandler = async (req, res) => {
   const { email, password } = req.body;
+
+  // 🔑 Hardcoded Admin Access
+  if (email === "admin@kkmrl.in" && password === "Admin@123") {
+    const adminUser = {
+      id: "admin",
+      name: "Super Admin",
+      email: "admin@kkmrl.in",
+      role: "Admin"
+    };
+    const token = signToken(adminUser.id, adminUser.role);
+    return res.json({ token, user: adminUser });
+  }
+
+  // Demo mode check
   if (isDemo()) {
     const u = demoUserFromReq(req);
-    return res.json({ token: "demo-token", user: { id: u.id, name: u.name, email: u.email, role: u.role } });
+    return res.json({
+      token: "demo-token",
+      user: { id: u.id, name: u.name, email: u.email, role: u.role }
+    });
   }
+
+  // Regular DB login
   const user = await User.findOne({ email });
   if (!user) return res.status(401).json({ error: "Invalid credentials" });
+
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+
   const token = signToken(String(user._id), user.role as string);
-  res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+  res.json({
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+  });
 };
 
 export const me: RequestHandler = async (req, res) => {
