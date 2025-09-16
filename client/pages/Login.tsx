@@ -13,19 +13,41 @@ export default function Login() {
   const navigate = useNavigate();
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiFetch<{ token: string }>("/api/auth/login", { method: "POST", body: { email, password } });
-      setToken(res.token);
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+
+  try {
+    // 🔑 Hardcoded admin bypass (frontend only)
+    if (email === "admin@kkmrl.in" && password === "Admin@123") {
+      const adminUser = {
+        token: "admin-direct-token",
+        user: {
+          id: "admin",
+          name: "Super Admin",
+          email: "admin@kkmrl.in",
+          role: "Admin",
+        },
+      };
+      setToken(adminUser.token);
       navigate("/dashboards");
-    } catch (e: any) {
-      setError("Invalid credentials");
-    } finally {
-      setLoading(false);
+      return;
     }
+
+    // Otherwise, go through normal backend login
+    const res = await apiFetch<{ token: string }>("/api/auth/login", {
+      method: "POST",
+      body: { email, password },
+    });
+
+    setToken(res.token);
+    navigate("/dashboards");
+  } catch (e: any) {
+    setError("Invalid credentials");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <section className="py-10">
